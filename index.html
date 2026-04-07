@@ -2,63 +2,118 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ôn từ vựng - Google Sheet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Ôn từ vựng - 3 ngăn + Random + Google Sheet</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(145deg, #f0f7ff 0%, #e9eef5 100%); font-family: 'Segoe UI', system-ui, sans-serif; padding: 2rem; color: #1a2c3e; }
-        .app-container { max-width: 1200px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 2rem; }
+        body { background: linear-gradient(145deg, #f0f7ff 0%, #e9eef5 100%); font-family: 'Segoe UI', system-ui, sans-serif; padding: 1.5rem; color: #1a2c3e; }
+        .app-container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 1.5rem; }
         .header h1 { font-size: 2rem; background: linear-gradient(135deg, #1e5a7d, #0f3b4f); background-clip: text; -webkit-background-clip: text; color: transparent; }
-        .stats-bar { background: white; border-radius: 40px; padding: 12px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .info-badge { background: #eef2fa; padding: 6px 16px; border-radius: 40px; font-weight: 600; }
-        .lesson-dropdown { background: #1e5a7d; color: white; border: none; border-radius: 40px; padding: 8px 20px; cursor: pointer; }
-        .btn { background: #e2e8f0; border: none; border-radius: 32px; padding: 8px 18px; cursor: pointer; }
+        .sub { color: #4a627a; font-size: 0.9rem; }
+        
+        .stats-bar { background: white; border-radius: 40px; padding: 10px 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .info-badge { background: #eef2fa; padding: 4px 14px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; }
+        .filter-group { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .search-box { background: #f8fafd; border: 1px solid #cbdde9; border-radius: 48px; padding: 6px 16px; width: 200px; }
+        .lesson-dropdown { background: #1e5a7d; color: white; border: none; border-radius: 40px; padding: 6px 18px; cursor: pointer; }
+        .btn { background: #e2e8f0; border: none; border-radius: 32px; padding: 6px 16px; font-weight: 500; cursor: pointer; transition: 0.2s; }
         .btn-primary { background: #1e5a7d; color: white; }
-        .flashcard-area { background: white; border-radius: 32px; padding: 2rem; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); cursor: pointer; }
-        .term-viet { font-size: 2rem; font-weight: 700; color: #1a5d7d; margin-bottom: 1rem; }
-        .meaning-chinese { font-size: 1.5rem; color: #b1624b; background: #fff3ed; display: inline-block; padding: 8px 24px; border-radius: 60px; }
+        .btn-primary:hover { background: #0f3b4f; }
+        
+        .tab-bar { display: flex; gap: 8px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+        .tab-btn { background: #e2e8f0; border: none; padding: 10px 24px; border-radius: 48px; font-weight: 600; cursor: pointer; }
+        .tab-btn.active { background: #1e5a7d; color: white; }
+        
+        .boxes-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .stat-box { flex: 1; background: white; border-radius: 20px; padding: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; }
+        .stat-box.red { border-left: 5px solid #e74c3c; }
+        .stat-box.yellow { border-left: 5px solid #f39c12; }
+        .stat-box.green { border-left: 5px solid #27ae60; }
+        .stat-count { font-size: 1.6rem; font-weight: 800; }
+        .stat-label { font-size: 0.75rem; color: #666; }
+        
+        .study-layout { display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
+        @media (max-width: 860px) { .study-layout { grid-template-columns: 1fr; } }
+        
+        .flashcard-area { background: transparent; perspective: 1500px; }
+        .flip-card { background: transparent; width: 100%; height: 320px; cursor: pointer; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.5s; transform-style: preserve-3d; border-radius: 28px; box-shadow: 0 20px 30px -12px rgba(0,0,0,0.2); }
+        .flipped .flip-card-inner { transform: rotateY(180deg); }
+        .front, .back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; background: white; }
+        .back { transform: rotateY(180deg); background: #fffaf5; }
+        .term-viet { font-size: 1.6rem; font-weight: 700; color: #1a5d7d; text-align: center; }
+        .meaning-chinese { font-size: 1.3rem; font-weight: 500; color: #b1624b; background: #fff3ed; padding: 6px 20px; border-radius: 40px; text-align: center; }
+        .card-hint { margin-top: 20px; font-size: 0.75rem; color: #8899b0; }
+        
+        .rating-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .rating-btn { padding: 8px 20px; border: none; border-radius: 40px; font-weight: 600; cursor: pointer; }
+        .rating-btn.red { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .rating-btn.yellow { background: #fff8e1; color: #f57c00; border: 1px solid #ffe082; }
+        .rating-btn.green { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        
         .nav-buttons { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
-        .vocab-list { background: white; border-radius: 32px; padding: 1.5rem; margin-top: 20px; }
-        .vocab-item { background: #f8fafd; border-radius: 16px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; cursor: pointer; }
-        .vocab-item:hover { background: #eef2fa; }
-        .loading, .error { text-align: center; padding: 40px; border-radius: 32px; background: white; }
-        .error { color: #c0392b; background: #ffe6e6; }
+        .nav-btn { background: #eef3fc; border: none; padding: 8px 20px; border-radius: 40px; font-weight: bold; cursor: pointer; }
+        .progress-text { text-align: center; margin-top: 12px; font-size: 0.8rem; color: #456e8c; }
+        
+        .quiz-area { background: white; border-radius: 28px; padding: 20px; }
+        .quiz-question { background: #f8fafd; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
+        .quiz-viet { font-size: 1.2rem; font-weight: 700; color: #1e5a7d; }
+        .quiz-input { width: 100%; padding: 10px 14px; border: 1px solid #cbdde9; border-radius: 28px; margin-top: 8px; }
+        .quiz-feedback { font-size: 0.8rem; margin-top: 6px; }
+        .quiz-result { text-align: center; padding: 16px; background: #eef2fa; border-radius: 20px; margin-top: 16px; }
+        .quiz-score { font-size: 1.8rem; font-weight: 800; color: #1e5a7d; }
+        
+        .vocab-list { background: rgba(255,255,240,0.3); border-radius: 28px; padding: 8px; }
+        .cards-grid { max-height: 65vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .vocab-item { background: white; border-radius: 20px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-left: 5px solid #ccc; }
+        .vocab-item.red { border-left-color: #e74c3c; }
+        .vocab-item.yellow { border-left-color: #f39c12; }
+        .vocab-item.green { border-left-color: #27ae60; }
+        
         .hidden { display: none; }
-        footer { text-align: center; margin-top: 30px; font-size: 0.75rem; color: #6f8eaa; }
+        footer { margin-top: 30px; text-align: center; font-size: 0.7rem; color: #6f8eaa; }
     </style>
 </head>
 <body>
 <div class="app-container">
     <div class="header">
-        <h1>我是最棒的</h1>
-        <p>📡 Dữ liệu từ Google Sheet · Tự động cập nhật</p>
+        <h1>🧠 Ôn từ vựng Thông minh</h1>
+        <div class="sub">Flashcard + 3 ngăn + Kiểm tra random + Đồng bộ Google Sheet</div>
     </div>
 
     <div class="stats-bar">
-        <div class="info-badge">📚 Tổng số: <span id="totalCount">0</span> từ</div>
-        <div>
-            <select id="lessonSelect" class="lesson-dropdown"><option>Đang tải bài học...</option></select>
+        <div class="info-badge">📊 <span id="totalCount">0</span> từ</div>
+        <div class="filter-group">
+            <select id="lessonSelect" class="lesson-dropdown"><option>Đang tải...</option></select>
+            <input type="text" id="searchInput" class="search-box" placeholder="🔍 Tìm từ">
             <button id="refreshBtn" class="btn">🔄 Làm mới</button>
+            <button id="exportDataBtn" class="btn">💾 Export</button>
+            <button id="importDataBtn" class="btn">📂 Import</button>
+            <input type="file" id="importFile" accept=".json" style="display:none">
         </div>
     </div>
 
-    <div class="flashcard-area" id="flashcard">
-        <div class="term-viet" id="cardViet">Đang tải...</div>
-        <div class="meaning-chinese hidden" id="cardChinese"></div>
-        <div class="card-hint">✨ Nhấn vào thẻ để xem nghĩa</div>
+    <div class="boxes-row">
+        <div class="stat-box red" data-filter="red"><div class="stat-count" id="redCount">0</div><div class="stat-label">🔴 Chưa biết</div></div>
+        <div class="stat-box yellow" data-filter="yellow"><div class="stat-count" id="yellowCount">0</div><div class="stat-label">🟡 Phân vân</div></div>
+        <div class="stat-box green" data-filter="green"><div class="stat-count" id="greenCount">0</div><div class="stat-label">🟢 Đã biết</div></div>
+        <div class="stat-box" data-filter="all"><div class="stat-count" id="allCount">0</div><div class="stat-label">📚 Tất cả</div></div>
     </div>
 
-    <div class="nav-buttons">
-        <button class="btn" id="prevBtn">◀ Trước</button>
-        <button class="btn" id="nextBtn">Sau ▶</button>
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="flashcard">📇 Flashcard & Xếp loại</button>
+        <button class="tab-btn" data-tab="quiz">🎯 Kiểm tra Random</button>
     </div>
 
-    <div class="vocab-list">
-        <h3>📖 Danh sách từ vựng</h3>
-        <div id="vocabGrid" class="loading">⏳ Đang tải dữ liệu...</div>
+    <div class="study-layout">
+        <div>
+            <div id="flashcardTab"><div class="flashcard-area"><div class="flip-card" id="flipCard"><div class="flip-card-inner"><div class="front"><div class="term-viet" id="cardViet">Chọn bài học</div><div class="card-hint">✨ Nhấn để lật</div></div><div class="back"><div class="meaning-chinese" id="cardChinese">---</div><div class="card-hint">🔁 Nhấn để quay lại</div></div></div></div><div class="rating-buttons"><button class="rating-btn red" data-rating="red">🔴 Chưa biết</button><button class="rating-btn yellow" data-rating="yellow">🟡 Phân vân</button><button class="rating-btn green" data-rating="green">🟢 Đã biết</button></div><div class="nav-buttons"><button class="nav-btn" id="prevBtn">◀ Trước</button><button class="nav-btn" id="nextBtn">Sau ▶</button></div><div class="progress-text" id="cardProgress"></div></div></div>
+            <div id="quizTab" class="hidden"><div class="quiz-area"><div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;"><span>📝 Số câu:</span><input type="number" id="quizCount" min="5" max="50" value="10" style="width:70px"><span>📚 Phạm vi:</span><select id="quizScope"><option value="current">Bài hiện tại</option><option value="all">Tất cả bài</option><option value="weak">Chỉ 🔴+🟡</option></select><button id="startQuizBtn" class="btn btn-primary">🎲 Bắt đầu</button></div><div id="quizContainer"></div></div></div>
+        </div>
+        <div class="vocab-list"><div style="font-weight:600; margin-bottom:10px;">📖 Danh sách từ</div><div class="cards-grid" id="vocabGrid"></div></div>
     </div>
-    <footer>📌 Bấm vào từ trong danh sách để chuyển nhanh</footer>
+    <footer>📌 Bấm vào ô thống kê để lọc theo ngăn. Export/Import để đồng bộ tiến độ giữa các thiết bị.</footer>
 </div>
 
 <script>
@@ -70,171 +125,187 @@
     let sheetNames = [];
     let currentSheet = "";
     let currentVocab = [];
-    let currentIndex = 0;
-    let showingMeaning = false;
+    let filteredVocab = [];
+    let currentCardIndex = 0;
+    let currentFilterBox = "all";
+    let vocabBoxes = {};
 
-    // Parse CSV đơn giản
+    function loadBoxes() { try { const saved = localStorage.getItem("vocab_boxes"); if(saved) Object.assign(vocabBoxes, JSON.parse(saved)); } catch(e){} }
+    function saveBoxes() { localStorage.setItem("vocab_boxes", JSON.stringify(vocabBoxes)); }
+    function getBoxKey(sheet, viet) { return `${sheet}|${viet}`; }
+    function getBox(sheet, viet) { return vocabBoxes[getBoxKey(sheet, viet)] || 1; }
+    function setBox(sheet, viet, box) { vocabBoxes[getBoxKey(sheet, viet)] = box; saveBoxes(); }
+
     function parseCSV(csvText) {
         const lines = csvText.split(/\r?\n/);
         const result = [];
-        for (let line of lines) {
+        for(let line of lines) {
             line = line.trim();
-            if (line === "") continue;
-            
-            // Tách bằng dấu phẩy, nhưng bỏ qua dấu phẩy trong ngoặc kép
-            let cells = [];
-            let current = "";
-            let inQuote = false;
-            for (let i = 0; i < line.length; i++) {
+            if(!line) continue;
+            let cells = [], current = "", inQuote = false;
+            for(let i=0; i<line.length; i++) {
                 const ch = line[i];
-                if (ch === '"') {
-                    inQuote = !inQuote;
-                } else if (ch === ',' && !inQuote) {
-                    cells.push(current.trim());
-                    current = "";
-                } else {
-                    current += ch;
-                }
+                if(ch === '"') inQuote = !inQuote;
+                else if(ch === ',' && !inQuote) { cells.push(current.trim()); current = ""; }
+                else current += ch;
             }
             cells.push(current.trim());
-            
-            // Bỏ dấu ngoặc kép thừa
             cells = cells.map(c => c.replace(/^["']|["']$/g, ''));
-            
-            if (cells.length >= 2 && cells[0] && cells[1]) {
-                result.push({ viet: cells[0], chi: cells[1] });
-            }
+            if(cells.length >= 2 && cells[0] && cells[1]) result.push({ viet: cells[0], chi: cells[1] });
         }
         return result;
     }
 
-    async function fetchData() {
-        const gridDiv = document.getElementById("vocabGrid");
-        gridDiv.innerHTML = '<div class="loading">⏳ Đang kết nối Google Sheet...</div>';
-        
+    async function fetchAllSheets() {
         try {
-            const response = await fetch(SHEET_CSV_URL);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const csvText = await response.text();
-            console.log("Dữ liệu nhận được:", csvText.substring(0, 500));
-            
-            const rows = parseCSV(csvText);
-            
-            if (rows.length === 0) {
-                throw new Error("Không tìm thấy dữ liệu. Hãy kiểm tra sheet có ít nhất 2 cột và có dữ liệu không.");
-            }
-            
-            // Gộp tất cả vào một sheet ảo (vì file CSV xuất bản toàn bộ thường gộp chung)
+            const resp = await fetch(SHEET_CSV_URL);
+            if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const csv = await resp.text();
+            const rows = parseCSV(csv);
+            if(!rows.length) throw new Error("Không tìm thấy dữ liệu");
             allSheetsData = { "Tất cả bài học": rows };
             sheetNames = ["Tất cả bài học"];
-            
-            // Cập nhật dropdown
             const select = document.getElementById("lessonSelect");
             select.innerHTML = '<option value="Tất cả bài học">📚 Tất cả bài học</option>';
-            
-            currentSheet = "Tất cả bài học";
-            currentVocab = rows;
-            currentIndex = 0;
-            showingMeaning = false;
-            
-            updateUI();
-            
-        } catch (error) {
-            console.error(error);
-            gridDiv.innerHTML = `<div class="error">❌ Lỗi: ${error.message}<br><br>🔧 Kiểm tra lại:<br>1. Link CSV đã đúng định dạng pub?output=csv<br>2. Sheet đã được xuất bản?<br>3. Có ít nhất 2 cột A (tiếng Việt) và B (tiếng Trung)?</div>`;
-        }
+            select.value = "Tất cả bài học";
+            loadLesson("Tất cả bài học");
+        } catch(e) { document.getElementById("vocabGrid").innerHTML = `<div class="error">Lỗi: ${e.message}</div>`; }
     }
 
-    function updateUI() {
-        document.getElementById("totalCount").innerText = currentVocab.length;
-        
-        if (currentVocab.length === 0) {
-            document.getElementById("cardViet").innerText = "📭 Không có từ vựng";
-            document.getElementById("cardChinese").classList.add("hidden");
-            document.getElementById("vocabGrid").innerHTML = "<div>Chưa có dữ liệu. Hãy thêm từ vào Sheet.</div>";
-            return;
-        }
-        
-        // Cập nhật flashcard
-        const item = currentVocab[currentIndex];
-        document.getElementById("cardViet").innerText = item.viet;
-        document.getElementById("cardChinese").innerHTML = item.chi;
-        if (!showingMeaning) {
-            document.getElementById("cardChinese").classList.add("hidden");
-        } else {
-            document.getElementById("cardChinese").classList.remove("hidden");
-        }
-        
-        // Cập nhật danh sách
+    function loadLesson(sheet) {
+        currentSheet = sheet;
+        const raw = allSheetsData[sheet] || [];
+        currentVocab = raw.map((item, idx) => ({ id: idx, viet: item.viet, chi: item.chi, box: getBox(sheet, item.viet) }));
+        applyFilter();
+    }
+
+    function applyFilter() {
+        let arr = [...currentVocab];
+        if(currentFilterBox !== "all") { const boxVal = { red:1, yellow:2, green:3 }[currentFilterBox]; arr = arr.filter(v => v.box === boxVal); }
+        const search = document.getElementById("searchInput").value.trim().toLowerCase();
+        if(search) arr = arr.filter(v => v.viet.toLowerCase().includes(search) || v.chi.toLowerCase().includes(search));
+        filteredVocab = arr;
+        if(filteredVocab.length && currentCardIndex >= filteredVocab.length) currentCardIndex = 0;
+        updateStatsAndUI();
+    }
+
+    function updateStatsAndUI() {
+        const total = currentVocab.length, red = currentVocab.filter(v=>v.box===1).length, yellow = currentVocab.filter(v=>v.box===2).length, green = currentVocab.filter(v=>v.box===3).length;
+        document.getElementById("totalCount").innerText = total;
+        document.getElementById("redCount").innerText = red;
+        document.getElementById("yellowCount").innerText = yellow;
+        document.getElementById("greenCount").innerText = green;
+        document.getElementById("allCount").innerText = total;
         renderVocabList();
+        updateFlashcard();
     }
 
     function renderVocabList() {
         const container = document.getElementById("vocabGrid");
+        if(!currentVocab.length) { container.innerHTML = "<div>Chưa có dữ liệu</div>"; return; }
         let html = "";
         currentVocab.forEach((item, idx) => {
-            html += `<div class="vocab-item" data-idx="${idx}">
-                        <span>${escapeHtml(item.viet)}</span>
-                        <span style="color:#b1624b">${escapeHtml(item.chi.substring(0, 40))}</span>
-                     </div>`;
+            const boxClass = item.box===1?"red":(item.box===2?"yellow":"green");
+            html += `<div class="vocab-item ${boxClass}" data-idx="${idx}"><div>${escapeHtml(item.viet)}</div><div>${escapeHtml(item.chi.substring(0,40))}</div></div>`;
         });
         container.innerHTML = html;
-        
-        // Gắn sự kiện click cho từng từ
-        document.querySelectorAll(".vocab-item").forEach(el => {
-            el.addEventListener("click", () => {
-                const idx = parseInt(el.dataset.idx);
-                if (!isNaN(idx)) {
-                    currentIndex = idx;
-                    showingMeaning = false;
-                    updateUI();
-                }
-            });
-        });
+        document.querySelectorAll(".vocab-item").forEach(el => { el.addEventListener("click", () => { currentCardIndex = parseInt(el.dataset.idx); applyFilter(); updateFlashcard(); }); });
     }
 
-    function nextCard() {
-        if (currentVocab.length === 0) return;
-        currentIndex = (currentIndex + 1) % currentVocab.length;
-        showingMeaning = false;
-        updateUI();
+    function updateFlashcard() {
+        if(!filteredVocab.length) { document.getElementById("cardViet").innerText = "📭 Không có từ"; document.getElementById("cardChinese").innerHTML = "---"; document.getElementById("cardProgress").innerText = "0/0"; return; }
+        const item = filteredVocab[currentCardIndex];
+        document.getElementById("cardViet").innerText = item.viet;
+        document.getElementById("cardChinese").innerHTML = item.chi;
+        document.getElementById("cardProgress").innerText = `${currentCardIndex+1}/${filteredVocab.length}`;
+        document.getElementById("flipCard").classList.remove("flipped");
     }
 
-    function prevCard() {
-        if (currentVocab.length === 0) return;
-        currentIndex = (currentIndex - 1 + currentVocab.length) % currentVocab.length;
-        showingMeaning = false;
-        updateUI();
-    }
-
-    function toggleMeaning() {
-        showingMeaning = !showingMeaning;
-        if (showingMeaning) {
-            document.getElementById("cardChinese").classList.remove("hidden");
-        } else {
-            document.getElementById("cardChinese").classList.add("hidden");
+    function rateCurrent(boxValue) {
+        if(!filteredVocab.length) return;
+        const item = filteredVocab[currentCardIndex];
+        const realItem = currentVocab.find(v => v.viet === item.viet);
+        if(realItem) {
+            const newBox = { red:1, yellow:2, green:3 }[boxValue];
+            realItem.box = newBox;
+            setBox(currentSheet, realItem.viet, newBox);
+            applyFilter();
+            if(filteredVocab.length && currentCardIndex >= filteredVocab.length) currentCardIndex = filteredVocab.length-1;
+            updateFlashcard();
         }
     }
 
-    function escapeHtml(str) {
-        if (!str) return "";
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
+    let quizQuestions = [], quizAnswers = [], quizResults = [];
+    function startQuiz() {
+        const count = parseInt(document.getElementById("quizCount").value) || 10;
+        const scope = document.getElementById("quizScope").value;
+        let pool = [];
+        if(scope === "current") pool = [...currentVocab];
+        else if(scope === "all") { pool = []; sheetNames.forEach(sn => { (allSheetsData[sn] || []).forEach(w => pool.push({ viet: w.viet, chi: w.chi, sheet: sn })); }); }
+        else if(scope === "weak") pool = currentVocab.filter(v => v.box === 1 || v.box === 2);
+        if(!pool.length) { alert("Không có từ nào!"); return; }
+        for(let i=pool.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+        quizQuestions = pool.slice(0, Math.min(count, pool.length));
+        quizAnswers = quizQuestions.map(() => "");
+        quizResults = quizQuestions.map(() => null);
+        renderQuiz();
+    }
+    function renderQuiz() {
+        const container = document.getElementById("quizContainer");
+        if(!quizQuestions.length) { container.innerHTML = "<div>Nhấn 'Bắt đầu'</div>"; return; }
+        let html = `<div style="margin-bottom:20px; font-weight:600;">📝 Nhập nghĩa tiếng Trung:</div>`;
+        quizQuestions.forEach((q, idx) => {
+            const isCorrect = quizResults[idx] === true, isWrong = quizResults[idx] === false;
+            html += `<div class="quiz-question"><div class="quiz-viet">${escapeHtml(q.viet)}</div>
+            <input class="quiz-input" data-idx="${idx}" type="text" placeholder="Nhập tiếng Trung..." value="${escapeHtml(quizAnswers[idx]||"")}" style="${isCorrect?'border-color:#4caf50;background:#e8f5e9':(isWrong?'border-color:#f44336;background:#ffebee':'')}">
+            <div class="quiz-feedback" style="color:${isCorrect?'#2e7d32':(isWrong?'#c62828':'#888')}">${isCorrect?'✓ Đúng!':(isWrong?`✗ Sai. Đáp án: ${q.chi}`:'')}</div></div>`;
         });
+        const correctCount = quizResults.filter(r=>r===true).length;
+        html += `<div class="quiz-result"><div class="quiz-score">${correctCount}/${quizQuestions.length}</div><button id="submitQuizBtn" class="btn btn-primary">📊 Nộp bài & Lưu</button></div>`;
+        container.innerHTML = html;
+        document.querySelectorAll(".quiz-input").forEach(inp => { inp.addEventListener("input", (e) => { const idx = parseInt(e.target.dataset.idx); quizAnswers[idx] = e.target.value; quizResults[idx] = null; renderQuiz(); }); });
+        document.getElementById("submitQuizBtn")?.addEventListener("click", submitQuiz);
+    }
+    function submitQuiz() {
+        quizQuestions.forEach((q, idx) => {
+            const user = (quizAnswers[idx]||"").trim().toLowerCase();
+            const ans = q.chi.trim().toLowerCase();
+            const isOk = user === ans || (ans.includes(user) && user.length>2) || (user.includes(ans));
+            quizResults[idx] = isOk;
+            if(currentSheet && q.viet) {
+                const realItem = currentVocab.find(v => v.viet === q.viet);
+                if(realItem) {
+                    if(isOk && realItem.box < 3) realItem.box++;
+                    else if(!isOk && realItem.box > 1) realItem.box = 1;
+                    if(realItem) setBox(currentSheet, realItem.viet, realItem.box);
+                }
+            }
+        });
+        applyFilter();
+        renderQuiz();
     }
 
-    // Sự kiện
-    document.getElementById("flashcard").addEventListener("click", toggleMeaning);
-    document.getElementById("nextBtn").addEventListener("click", nextCard);
-    document.getElementById("prevBtn").addEventListener("click", prevCard);
-    document.getElementById("refreshBtn").addEventListener("click", fetchData);
-    
-    // Khởi chạy
-    fetchData();
+    function exportData() { const data = JSON.stringify(vocabBoxes); const blob = new Blob([data], {type:"application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "vocab_progress.json"; a.click(); URL.revokeObjectURL(a.href); }
+    function importData(file) { const reader = new FileReader(); reader.onload = e => { try { const imported = JSON.parse(e.target.result); Object.assign(vocabBoxes, imported); saveBoxes(); loadLesson(currentSheet); alert("Import thành công!"); } catch(err) { alert("File không hợp lệ"); } }; reader.readAsText(file); }
+
+    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+    document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); document.getElementById("flashcardTab").classList.toggle("hidden", btn.dataset.tab!=="flashcard"); document.getElementById("quizTab").classList.toggle("hidden", btn.dataset.tab!=="quiz"); }); });
+    document.querySelectorAll(".stat-box").forEach(box => { box.addEventListener("click", () => { currentFilterBox = box.dataset.filter || "all"; applyFilter(); }); });
+    document.getElementById("lessonSelect").addEventListener("change", (e) => { if(e.target.value) loadLesson(e.target.value); });
+    document.getElementById("searchInput").addEventListener("input", () => applyFilter());
+    document.getElementById("refreshBtn").addEventListener("click", () => fetchAllSheets());
+    document.getElementById("prevBtn").addEventListener("click", () => { if(filteredVocab.length){ currentCardIndex = (currentCardIndex-1+filteredVocab.length)%filteredVocab.length; updateFlashcard(); } });
+    document.getElementById("nextBtn").addEventListener("click", () => { if(filteredVocab.length){ currentCardIndex = (currentCardIndex+1)%filteredVocab.length; updateFlashcard(); } });
+    document.getElementById("flipCard").addEventListener("click", () => { if(filteredVocab.length) document.getElementById("flipCard").classList.toggle("flipped"); });
+    document.querySelectorAll(".rating-btn").forEach(btn => { btn.addEventListener("click", () => rateCurrent(btn.dataset.rating)); });
+    document.getElementById("startQuizBtn").addEventListener("click", startQuiz);
+    document.getElementById("exportDataBtn").addEventListener("click", exportData);
+    document.getElementById("importDataBtn").addEventListener("click", () => document.getElementById("importFile").click());
+    document.getElementById("importFile").addEventListener("change", (e) => { if(e.target.files[0]) importData(e.target.files[0]); });
+
+    loadBoxes();
+    fetchAllSheets();
 </script>
 </body>
 </html>
