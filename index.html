@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Ôn từ vựng - 3 ngăn + Random + Google Sheet</title>
+    <title>Ôn từ vựng - 2 chiều + Google Sheet</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f0f7ff 0%, #e9eef5 100%); font-family: 'Segoe UI', system-ui, sans-serif; padding: 1.5rem; color: #1a2c3e; }
@@ -58,7 +58,8 @@
         
         .quiz-area { background: white; border-radius: 28px; padding: 20px; }
         .quiz-question { background: #f8fafd; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
-        .quiz-viet { font-size: 1.2rem; font-weight: 700; color: #1e5a7d; }
+        .quiz-question-title { font-size: 1rem; color: #666; margin-bottom: 8px; }
+        .quiz-question-content { font-size: 1.2rem; font-weight: 700; color: #1e5a7d; }
         .quiz-input { width: 100%; padding: 10px 14px; border: 1px solid #cbdde9; border-radius: 28px; margin-top: 8px; }
         .quiz-feedback { font-size: 0.8rem; margin-top: 6px; }
         .quiz-result { text-align: center; padding: 16px; background: #eef2fa; border-radius: 20px; margin-top: 16px; }
@@ -78,8 +79,8 @@
 <body>
 <div class="app-container">
     <div class="header">
-        <h1>🧠 Ôn từ vựng Thông minh</h1>
-        <div class="sub">Flashcard + 3 ngăn + Kiểm tra random + Đồng bộ Google Sheet</div>
+        <h1>🧠 Ôn từ vựng 2 chiều</h1>
+        <div class="sub">Flashcard + 3 ngăn + Kiểm tra random (Việt→Trung / Trung→Việt) + Google Sheet</div>
     </div>
 
     <div class="stats-bar">
@@ -108,17 +109,53 @@
 
     <div class="study-layout">
         <div>
-            <div id="flashcardTab"><div class="flashcard-area"><div class="flip-card" id="flipCard"><div class="flip-card-inner"><div class="front"><div class="term-viet" id="cardViet">Chọn bài học</div><div class="card-hint">✨ Nhấn để lật</div></div><div class="back"><div class="meaning-chinese" id="cardChinese">---</div><div class="card-hint">🔁 Nhấn để quay lại</div></div></div></div><div class="rating-buttons"><button class="rating-btn red" data-rating="red">🔴 Chưa biết</button><button class="rating-btn yellow" data-rating="yellow">🟡 Phân vân</button><button class="rating-btn green" data-rating="green">🟢 Đã biết</button></div><div class="nav-buttons"><button class="nav-btn" id="prevBtn">◀ Trước</button><button class="nav-btn" id="nextBtn">Sau ▶</button></div><div class="progress-text" id="cardProgress"></div></div></div>
-            <div id="quizTab" class="hidden"><div class="quiz-area"><div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;"><span>📝 Số câu:</span><input type="number" id="quizCount" min="5" max="50" value="10" style="width:70px"><span>📚 Phạm vi:</span><select id="quizScope"><option value="current">Bài hiện tại</option><option value="all">Tất cả bài</option><option value="weak">Chỉ 🔴+🟡</option></select><button id="startQuizBtn" class="btn btn-primary">🎲 Bắt đầu</button></div><div id="quizContainer"></div></div></div>
+            <div id="flashcardTab">
+                <div class="flashcard-area">
+                    <div class="flip-card" id="flipCard">
+                        <div class="flip-card-inner">
+                            <div class="front"><div class="term-viet" id="cardViet">Chọn bài học</div><div class="card-hint">✨ Nhấn để lật</div></div>
+                            <div class="back"><div class="meaning-chinese" id="cardChinese">---</div><div class="card-hint">🔁 Nhấn để quay lại</div></div>
+                        </div>
+                    </div>
+                    <div class="rating-buttons"><button class="rating-btn red" data-rating="red">🔴 Chưa biết</button><button class="rating-btn yellow" data-rating="yellow">🟡 Phân vân</button><button class="rating-btn green" data-rating="green">🟢 Đã biết</button></div>
+                    <div class="nav-buttons"><button class="nav-btn" id="prevBtn">◀ Trước</button><button class="nav-btn" id="nextBtn">Sau ▶</button></div>
+                    <div class="progress-text" id="cardProgress"></div>
+                </div>
+            </div>
+            <div id="quizTab" class="hidden">
+                <div class="quiz-area">
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;">
+                        <span>📝 Số câu:</span>
+                        <input type="number" id="quizCount" min="5" max="50" value="10" style="width:70px">
+                        <span>🔄 Chiều:</span>
+                        <select id="quizDirection">
+                            <option value="viet2trung">🇻🇳 → 🇨🇳 (Việt → Trung)</option>
+                            <option value="trung2viet">🇨🇳 → 🇻🇳 (Trung → Việt)</option>
+                            <option value="mixed">🔀 Hỗn hợp (cả 2 chiều)</option>
+                        </select>
+                        <span>📚 Phạm vi:</span>
+                        <select id="quizScope">
+                            <option value="current">Bài hiện tại</option>
+                            <option value="all">Tất cả bài</option>
+                            <option value="weak">Chỉ 🔴+🟡</option>
+                        </select>
+                        <button id="startQuizBtn" class="btn btn-primary">🎲 Bắt đầu</button>
+                    </div>
+                    <div id="quizContainer"></div>
+                </div>
+            </div>
         </div>
-        <div class="vocab-list"><div style="font-weight:600; margin-bottom:10px;">📖 Danh sách từ</div><div class="cards-grid" id="vocabGrid"></div></div>
+        <div class="vocab-list">
+            <div style="font-weight:600; margin-bottom:10px;">📖 Danh sách từ (cột A=Trung, B=Việt)</div>
+            <div class="cards-grid" id="vocabGrid"></div>
+        </div>
     </div>
     <footer>📌 Bấm vào ô thống kê để lọc theo ngăn. Export/Import để đồng bộ tiến độ giữa các thiết bị.</footer>
 </div>
 
 <script>
     // ==================== 🔧 DÁN LINK CSV CỦA BẠN VÀO ĐÂY ====================
-    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQbB65oopQxGCy_hXS4oVW4bWv2pydnZ06LIg5QHoW_3NamnMWWXjMjIJc75ZznJeWtvMFYfXzN_aXx/pub?output=csv";
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1v.../pub?output=csv";
     // ====================================================================
 
     let allSheetsData = {};
@@ -132,10 +169,11 @@
 
     function loadBoxes() { try { const saved = localStorage.getItem("vocab_boxes"); if(saved) Object.assign(vocabBoxes, JSON.parse(saved)); } catch(e){} }
     function saveBoxes() { localStorage.setItem("vocab_boxes", JSON.stringify(vocabBoxes)); }
-    function getBoxKey(sheet, viet) { return `${sheet}|${viet}`; }
+    function getBoxKey(sheet, word) { return `${sheet}|${word}`; }
     function getBox(sheet, viet) { return vocabBoxes[getBoxKey(sheet, viet)] || 1; }
     function setBox(sheet, viet, box) { vocabBoxes[getBoxKey(sheet, viet)] = box; saveBoxes(); }
 
+    // Đọc CSV: cột A = tiếng Trung, cột B = tiếng Việt
     function parseCSV(csvText) {
         const lines = csvText.split(/\r?\n/);
         const result = [];
@@ -151,7 +189,10 @@
             }
             cells.push(current.trim());
             cells = cells.map(c => c.replace(/^["']|["']$/g, ''));
-            if(cells.length >= 2 && cells[0] && cells[1]) result.push({ viet: cells[0], chi: cells[1] });
+            // cells[0] = tiếng Trung, cells[1] = tiếng Việt
+            if(cells.length >= 2 && cells[0] && cells[1]) {
+                result.push({ viet: cells[1], chinese: cells[0] });
+            }
         }
         return result;
     }
@@ -162,7 +203,7 @@
             if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const csv = await resp.text();
             const rows = parseCSV(csv);
-            if(!rows.length) throw new Error("Không tìm thấy dữ liệu");
+            if(!rows.length) throw new Error("Không tìm thấy dữ liệu.");
             allSheetsData = { "Tất cả bài học": rows };
             sheetNames = ["Tất cả bài học"];
             const select = document.getElementById("lessonSelect");
@@ -175,7 +216,7 @@
     function loadLesson(sheet) {
         currentSheet = sheet;
         const raw = allSheetsData[sheet] || [];
-        currentVocab = raw.map((item, idx) => ({ id: idx, viet: item.viet, chi: item.chi, box: getBox(sheet, item.viet) }));
+        currentVocab = raw.map((item, idx) => ({ id: idx, viet: item.viet, chinese: item.chinese, box: getBox(sheet, item.viet) }));
         applyFilter();
     }
 
@@ -183,7 +224,7 @@
         let arr = [...currentVocab];
         if(currentFilterBox !== "all") { const boxVal = { red:1, yellow:2, green:3 }[currentFilterBox]; arr = arr.filter(v => v.box === boxVal); }
         const search = document.getElementById("searchInput").value.trim().toLowerCase();
-        if(search) arr = arr.filter(v => v.viet.toLowerCase().includes(search) || v.chi.toLowerCase().includes(search));
+        if(search) arr = arr.filter(v => v.viet.toLowerCase().includes(search) || v.chinese.toLowerCase().includes(search));
         filteredVocab = arr;
         if(filteredVocab.length && currentCardIndex >= filteredVocab.length) currentCardIndex = 0;
         updateStatsAndUI();
@@ -206,7 +247,7 @@
         let html = "";
         currentVocab.forEach((item, idx) => {
             const boxClass = item.box===1?"red":(item.box===2?"yellow":"green");
-            html += `<div class="vocab-item ${boxClass}" data-idx="${idx}"><div>${escapeHtml(item.viet)}</div><div>${escapeHtml(item.chi.substring(0,40))}</div></div>`;
+            html += `<div class="vocab-item ${boxClass}" data-idx="${idx}"><div>${escapeHtml(item.viet)}</div><div>${escapeHtml(item.chinese.substring(0,40))}</div></div>`;
         });
         container.innerHTML = html;
         document.querySelectorAll(".vocab-item").forEach(el => { el.addEventListener("click", () => { currentCardIndex = parseInt(el.dataset.idx); applyFilter(); updateFlashcard(); }); });
@@ -216,7 +257,7 @@
         if(!filteredVocab.length) { document.getElementById("cardViet").innerText = "📭 Không có từ"; document.getElementById("cardChinese").innerHTML = "---"; document.getElementById("cardProgress").innerText = "0/0"; return; }
         const item = filteredVocab[currentCardIndex];
         document.getElementById("cardViet").innerText = item.viet;
-        document.getElementById("cardChinese").innerHTML = item.chi;
+        document.getElementById("cardChinese").innerHTML = item.chinese;
         document.getElementById("cardProgress").innerText = `${currentCardIndex+1}/${filteredVocab.length}`;
         document.getElementById("flipCard").classList.remove("flipped");
     }
@@ -239,41 +280,61 @@
     function startQuiz() {
         const count = parseInt(document.getElementById("quizCount").value) || 10;
         const scope = document.getElementById("quizScope").value;
+        const direction = document.getElementById("quizDirection").value;
         let pool = [];
         if(scope === "current") pool = [...currentVocab];
-        else if(scope === "all") { pool = []; sheetNames.forEach(sn => { (allSheetsData[sn] || []).forEach(w => pool.push({ viet: w.viet, chi: w.chi, sheet: sn })); }); }
+        else if(scope === "all") { pool = []; sheetNames.forEach(sn => { (allSheetsData[sn] || []).forEach(w => pool.push({ viet: w.viet, chinese: w.chinese, sheet: sn })); }); }
         else if(scope === "weak") pool = currentVocab.filter(v => v.box === 1 || v.box === 2);
         if(!pool.length) { alert("Không có từ nào!"); return; }
-        for(let i=pool.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-        quizQuestions = pool.slice(0, Math.min(count, pool.length));
+        
+        // Tạo câu hỏi dựa trên chiều
+        let rawQuestions = [];
+        for(let item of pool) {
+            if(direction === "viet2trung" || direction === "mixed") {
+                rawQuestions.push({ type: "viet2trung", question: item.viet, answer: item.chinese, originalItem: item });
+            }
+            if(direction === "trung2viet" || direction === "mixed") {
+                rawQuestions.push({ type: "trung2viet", question: item.chinese, answer: item.viet, originalItem: item });
+            }
+        }
+        // Trộn ngẫu nhiên
+        for(let i=rawQuestions.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [rawQuestions[i], rawQuestions[j]] = [rawQuestions[j], rawQuestions[i]]; }
+        quizQuestions = rawQuestions.slice(0, Math.min(count, rawQuestions.length));
         quizAnswers = quizQuestions.map(() => "");
         quizResults = quizQuestions.map(() => null);
         renderQuiz();
     }
+    
     function renderQuiz() {
         const container = document.getElementById("quizContainer");
         if(!quizQuestions.length) { container.innerHTML = "<div>Nhấn 'Bắt đầu'</div>"; return; }
-        let html = `<div style="margin-bottom:20px; font-weight:600;">📝 Nhập nghĩa tiếng Trung:</div>`;
+        let html = `<div style="margin-bottom:20px; font-weight:600;">📝 Trả lời câu hỏi:</div>`;
         quizQuestions.forEach((q, idx) => {
             const isCorrect = quizResults[idx] === true, isWrong = quizResults[idx] === false;
-            html += `<div class="quiz-question"><div class="quiz-viet">${escapeHtml(q.viet)}</div>
-            <input class="quiz-input" data-idx="${idx}" type="text" placeholder="Nhập tiếng Trung..." value="${escapeHtml(quizAnswers[idx]||"")}" style="${isCorrect?'border-color:#4caf50;background:#e8f5e9':(isWrong?'border-color:#f44336;background:#ffebee':'')}">
-            <div class="quiz-feedback" style="color:${isCorrect?'#2e7d32':(isWrong?'#c62828':'#888')}">${isCorrect?'✓ Đúng!':(isWrong?`✗ Sai. Đáp án: ${q.chi}`:'')}</div></div>`;
+            const directionText = q.type === "viet2trung" ? "🇻🇳 → 🇨🇳" : "🇨🇳 → 🇻🇳";
+            html += `<div class="quiz-question">
+                        <div class="quiz-question-title">${directionText}</div>
+                        <div class="quiz-question-content">${escapeHtml(q.question)}</div>
+                        <input class="quiz-input" data-idx="${idx}" type="text" placeholder="Nhập câu trả lời..." value="${escapeHtml(quizAnswers[idx]||"")}" style="${isCorrect?'border-color:#4caf50;background:#e8f5e9':(isWrong?'border-color:#f44336;background:#ffebee':'')}">
+                        <div class="quiz-feedback" style="color:${isCorrect?'#2e7d32':(isWrong?'#c62828':'#888')}">${isCorrect?'✓ Đúng!':(isWrong?`✗ Sai. Đáp án: ${q.answer}`:'')}</div>
+                    </div>`;
         });
         const correctCount = quizResults.filter(r=>r===true).length;
-        html += `<div class="quiz-result"><div class="quiz-score">${correctCount}/${quizQuestions.length}</div><button id="submitQuizBtn" class="btn btn-primary">📊 Nộp bài & Lưu</button></div>`;
+        html += `<div class="quiz-result"><div class="quiz-score">${correctCount}/${quizQuestions.length}</div><button id="submitQuizBtn" class="btn btn-primary">📊 Nộp bài & Lưu kết quả</button></div>`;
         container.innerHTML = html;
         document.querySelectorAll(".quiz-input").forEach(inp => { inp.addEventListener("input", (e) => { const idx = parseInt(e.target.dataset.idx); quizAnswers[idx] = e.target.value; quizResults[idx] = null; renderQuiz(); }); });
         document.getElementById("submitQuizBtn")?.addEventListener("click", submitQuiz);
     }
+    
     function submitQuiz() {
         quizQuestions.forEach((q, idx) => {
             const user = (quizAnswers[idx]||"").trim().toLowerCase();
-            const ans = q.chi.trim().toLowerCase();
+            const ans = q.answer.trim().toLowerCase();
             const isOk = user === ans || (ans.includes(user) && user.length>2) || (user.includes(ans));
             quizResults[idx] = isOk;
-            if(currentSheet && q.viet) {
-                const realItem = currentVocab.find(v => v.viet === q.viet);
+            // Cập nhật box dựa trên kết quả
+            if(currentSheet && q.originalItem && q.originalItem.viet) {
+                const realItem = currentVocab.find(v => v.viet === q.originalItem.viet);
                 if(realItem) {
                     if(isOk && realItem.box < 3) realItem.box++;
                     else if(!isOk && realItem.box > 1) realItem.box = 1;
