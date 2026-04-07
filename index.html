@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Ôn từ vựng - 2 chiều + Google Sheet</title>
+    <title>Ôn từ vựng - 2 chiều + CSV chuẩn</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f0f7ff 0%, #e9eef5 100%); font-family: 'Segoe UI', system-ui, sans-serif; padding: 1.5rem; color: #1a2c3e; }
@@ -42,8 +42,8 @@
         .flipped .flip-card-inner { transform: rotateY(180deg); }
         .front, .back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; background: white; }
         .back { transform: rotateY(180deg); background: #fffaf5; }
-        .term-viet { font-size: 1.6rem; font-weight: 700; color: #1a5d7d; text-align: center; }
-        .meaning-chinese { font-size: 1.3rem; font-weight: 500; color: #b1624b; background: #fff3ed; padding: 6px 20px; border-radius: 40px; text-align: center; }
+        .term-viet { font-size: 1.6rem; font-weight: 700; color: #1a5d7d; text-align: center; white-space: pre-wrap; word-break: break-word; }
+        .meaning-chinese { font-size: 1.3rem; font-weight: 500; color: #b1624b; background: #fff3ed; padding: 6px 20px; border-radius: 40px; text-align: center; white-space: pre-wrap; word-break: break-word; }
         .card-hint { margin-top: 20px; font-size: 0.75rem; color: #8899b0; }
         
         .rating-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
@@ -58,8 +58,8 @@
         
         .quiz-area { background: white; border-radius: 28px; padding: 20px; }
         .quiz-question { background: #f8fafd; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
-        .quiz-question-title { font-size: 1rem; color: #666; margin-bottom: 8px; }
-        .quiz-question-content { font-size: 1.2rem; font-weight: 700; color: #1e5a7d; }
+        .quiz-question-title { font-size: 0.85rem; color: #666; margin-bottom: 8px; }
+        .quiz-question-content { font-size: 1.2rem; font-weight: 700; color: #1e5a7d; white-space: pre-wrap; }
         .quiz-input { width: 100%; padding: 10px 14px; border: 1px solid #cbdde9; border-radius: 28px; margin-top: 8px; }
         .quiz-feedback { font-size: 0.8rem; margin-top: 6px; }
         .quiz-result { text-align: center; padding: 16px; background: #eef2fa; border-radius: 20px; margin-top: 16px; }
@@ -71,6 +71,8 @@
         .vocab-item.red { border-left-color: #e74c3c; }
         .vocab-item.yellow { border-left-color: #f39c12; }
         .vocab-item.green { border-left-color: #27ae60; }
+        .viet-display { font-weight: 500; color: #1a5d7d; white-space: pre-wrap; word-break: break-word; max-width: 60%; }
+        .chi-display { color: #b1624b; white-space: pre-wrap; word-break: break-word; text-align: right; max-width: 35%; }
         
         .hidden { display: none; }
         footer { margin-top: 30px; text-align: center; font-size: 0.7rem; color: #6f8eaa; }
@@ -79,8 +81,8 @@
 <body>
 <div class="app-container">
     <div class="header">
-        <h1>🧠 我是最棒的</h1>
-        <div class="sub">Flashcard + 3 ngăn + Kiểm tra random (Việt→Trung / Trung→Việt) + Google Sheet</div>
+        <h1>🧠 Ôn từ vựng 2 chiều</h1>
+        <div class="sub">Flashcard + 3 ngăn + Kiểm tra random (Việt↔Trung) + Google Sheet</div>
     </div>
 
     <div class="stats-bar">
@@ -146,11 +148,11 @@
             </div>
         </div>
         <div class="vocab-list">
-            <div style="font-weight:600; margin-bottom:10px;">📖 Danh sách từ (cột A=Trung, B=Việt)</div>
+            <div style="font-weight:600; margin-bottom:10px;">📖 Danh sách từ (A=Trung, B=Việt)</div>
             <div class="cards-grid" id="vocabGrid"></div>
         </div>
     </div>
-    <footer>📌 Bấm vào ô thống kê để lọc theo ngăn. Export/Import để đồng bộ tiến độ giữa các thiết bị.</footer>
+    <footer>📌 Bấm vào ô thống kê để lọc theo ngăn. Export/Import để đồng bộ tiến độ.</footer>
 </div>
 
 <script>
@@ -169,204 +171,62 @@
 
     function loadBoxes() { try { const saved = localStorage.getItem("vocab_boxes"); if(saved) Object.assign(vocabBoxes, JSON.parse(saved)); } catch(e){} }
     function saveBoxes() { localStorage.setItem("vocab_boxes", JSON.stringify(vocabBoxes)); }
-    function getBoxKey(sheet, word) { return `${sheet}|${word}`; }
+    function getBoxKey(sheet, viet) { return `${sheet}|${viet}`; }
     function getBox(sheet, viet) { return vocabBoxes[getBoxKey(sheet, viet)] || 1; }
     function setBox(sheet, viet, box) { vocabBoxes[getBoxKey(sheet, viet)] = box; saveBoxes(); }
 
-    // Đọc CSV: cột A = tiếng Trung, cột B = tiếng Việt
+    // ========== PARSE CSV CHUẨN - XỬ LÝ ĐƯỢC XUỐNG DÒNG TRONG Ô ==========
     function parseCSV(csvText) {
-        const lines = csvText.split(/\r?\n/);
-        const result = [];
-        for(let line of lines) {
-            line = line.trim();
-            if(!line) continue;
-            let cells = [], current = "", inQuote = false;
-            for(let i=0; i<line.length; i++) {
-                const ch = line[i];
-                if(ch === '"') inQuote = !inQuote;
-                else if(ch === ',' && !inQuote) { cells.push(current.trim()); current = ""; }
-                else current += ch;
-            }
-            cells.push(current.trim());
-            cells = cells.map(c => c.replace(/^["']|["']$/g, ''));
-            // cells[0] = tiếng Trung, cells[1] = tiếng Việt
-            if(cells.length >= 2 && cells[0] && cells[1]) {
-                result.push({ viet: cells[1], chinese: cells[0] });
-            }
-        }
-        return result;
-    }
-
-    async function fetchAllSheets() {
-        try {
-            const resp = await fetch(SHEET_CSV_URL);
-            if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const csv = await resp.text();
-            const rows = parseCSV(csv);
-            if(!rows.length) throw new Error("Không tìm thấy dữ liệu.");
-            allSheetsData = { "Tất cả bài học": rows };
-            sheetNames = ["Tất cả bài học"];
-            const select = document.getElementById("lessonSelect");
-            select.innerHTML = '<option value="Tất cả bài học">📚 Tất cả bài học</option>';
-            select.value = "Tất cả bài học";
-            loadLesson("Tất cả bài học");
-        } catch(e) { document.getElementById("vocabGrid").innerHTML = `<div class="error">Lỗi: ${e.message}</div>`; }
-    }
-
-    function loadLesson(sheet) {
-        currentSheet = sheet;
-        const raw = allSheetsData[sheet] || [];
-        currentVocab = raw.map((item, idx) => ({ id: idx, viet: item.viet, chinese: item.chinese, box: getBox(sheet, item.viet) }));
-        applyFilter();
-    }
-
-    function applyFilter() {
-        let arr = [...currentVocab];
-        if(currentFilterBox !== "all") { const boxVal = { red:1, yellow:2, green:3 }[currentFilterBox]; arr = arr.filter(v => v.box === boxVal); }
-        const search = document.getElementById("searchInput").value.trim().toLowerCase();
-        if(search) arr = arr.filter(v => v.viet.toLowerCase().includes(search) || v.chinese.toLowerCase().includes(search));
-        filteredVocab = arr;
-        if(filteredVocab.length && currentCardIndex >= filteredVocab.length) currentCardIndex = 0;
-        updateStatsAndUI();
-    }
-
-    function updateStatsAndUI() {
-        const total = currentVocab.length, red = currentVocab.filter(v=>v.box===1).length, yellow = currentVocab.filter(v=>v.box===2).length, green = currentVocab.filter(v=>v.box===3).length;
-        document.getElementById("totalCount").innerText = total;
-        document.getElementById("redCount").innerText = red;
-        document.getElementById("yellowCount").innerText = yellow;
-        document.getElementById("greenCount").innerText = green;
-        document.getElementById("allCount").innerText = total;
-        renderVocabList();
-        updateFlashcard();
-    }
-
-    function renderVocabList() {
-        const container = document.getElementById("vocabGrid");
-        if(!currentVocab.length) { container.innerHTML = "<div>Chưa có dữ liệu</div>"; return; }
-        let html = "";
-        currentVocab.forEach((item, idx) => {
-            const boxClass = item.box===1?"red":(item.box===2?"yellow":"green");
-            html += `<div class="vocab-item ${boxClass}" data-idx="${idx}"><div>${escapeHtml(item.viet)}</div><div>${escapeHtml(item.chinese.substring(0,40))}</div></div>`;
-        });
-        container.innerHTML = html;
-        document.querySelectorAll(".vocab-item").forEach(el => { el.addEventListener("click", () => { currentCardIndex = parseInt(el.dataset.idx); applyFilter(); updateFlashcard(); }); });
-    }
-
-    function updateFlashcard() {
-        if(!filteredVocab.length) { document.getElementById("cardViet").innerText = "📭 Không có từ"; document.getElementById("cardChinese").innerHTML = "---"; document.getElementById("cardProgress").innerText = "0/0"; return; }
-        const item = filteredVocab[currentCardIndex];
-        document.getElementById("cardViet").innerText = item.viet;
-        document.getElementById("cardChinese").innerHTML = item.chinese;
-        document.getElementById("cardProgress").innerText = `${currentCardIndex+1}/${filteredVocab.length}`;
-        document.getElementById("flipCard").classList.remove("flipped");
-    }
-
-    function rateCurrent(boxValue) {
-        if(!filteredVocab.length) return;
-        const item = filteredVocab[currentCardIndex];
-        const realItem = currentVocab.find(v => v.viet === item.viet);
-        if(realItem) {
-            const newBox = { red:1, yellow:2, green:3 }[boxValue];
-            realItem.box = newBox;
-            setBox(currentSheet, realItem.viet, newBox);
-            applyFilter();
-            if(filteredVocab.length && currentCardIndex >= filteredVocab.length) currentCardIndex = filteredVocab.length-1;
-            updateFlashcard();
-        }
-    }
-
-    let quizQuestions = [], quizAnswers = [], quizResults = [];
-    function startQuiz() {
-        const count = parseInt(document.getElementById("quizCount").value) || 10;
-        const scope = document.getElementById("quizScope").value;
-        const direction = document.getElementById("quizDirection").value;
-        let pool = [];
-        if(scope === "current") pool = [...currentVocab];
-        else if(scope === "all") { pool = []; sheetNames.forEach(sn => { (allSheetsData[sn] || []).forEach(w => pool.push({ viet: w.viet, chinese: w.chinese, sheet: sn })); }); }
-        else if(scope === "weak") pool = currentVocab.filter(v => v.box === 1 || v.box === 2);
-        if(!pool.length) { alert("Không có từ nào!"); return; }
+        const rows = [];
+        let currentRow = [];
+        let currentField = "";
+        let inQuotes = false;
+        let i = 0;
         
-        // Tạo câu hỏi dựa trên chiều
-        let rawQuestions = [];
-        for(let item of pool) {
-            if(direction === "viet2trung" || direction === "mixed") {
-                rawQuestions.push({ type: "viet2trung", question: item.viet, answer: item.chinese, originalItem: item });
-            }
-            if(direction === "trung2viet" || direction === "mixed") {
-                rawQuestions.push({ type: "trung2viet", question: item.chinese, answer: item.viet, originalItem: item });
-            }
-        }
-        // Trộn ngẫu nhiên
-        for(let i=rawQuestions.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [rawQuestions[i], rawQuestions[j]] = [rawQuestions[j], rawQuestions[i]]; }
-        quizQuestions = rawQuestions.slice(0, Math.min(count, rawQuestions.length));
-        quizAnswers = quizQuestions.map(() => "");
-        quizResults = quizQuestions.map(() => null);
-        renderQuiz();
-    }
-    
-    function renderQuiz() {
-        const container = document.getElementById("quizContainer");
-        if(!quizQuestions.length) { container.innerHTML = "<div>Nhấn 'Bắt đầu'</div>"; return; }
-        let html = `<div style="margin-bottom:20px; font-weight:600;">📝 Trả lời câu hỏi:</div>`;
-        quizQuestions.forEach((q, idx) => {
-            const isCorrect = quizResults[idx] === true, isWrong = quizResults[idx] === false;
-            const directionText = q.type === "viet2trung" ? "🇻🇳 → 🇨🇳" : "🇨🇳 → 🇻🇳";
-            html += `<div class="quiz-question">
-                        <div class="quiz-question-title">${directionText}</div>
-                        <div class="quiz-question-content">${escapeHtml(q.question)}</div>
-                        <input class="quiz-input" data-idx="${idx}" type="text" placeholder="Nhập câu trả lời..." value="${escapeHtml(quizAnswers[idx]||"")}" style="${isCorrect?'border-color:#4caf50;background:#e8f5e9':(isWrong?'border-color:#f44336;background:#ffebee':'')}">
-                        <div class="quiz-feedback" style="color:${isCorrect?'#2e7d32':(isWrong?'#c62828':'#888')}">${isCorrect?'✓ Đúng!':(isWrong?`✗ Sai. Đáp án: ${q.answer}`:'')}</div>
-                    </div>`;
-        });
-        const correctCount = quizResults.filter(r=>r===true).length;
-        html += `<div class="quiz-result"><div class="quiz-score">${correctCount}/${quizQuestions.length}</div><button id="submitQuizBtn" class="btn btn-primary">📊 Nộp bài & Lưu kết quả</button></div>`;
-        container.innerHTML = html;
-        document.querySelectorAll(".quiz-input").forEach(inp => { inp.addEventListener("input", (e) => { const idx = parseInt(e.target.dataset.idx); quizAnswers[idx] = e.target.value; quizResults[idx] = null; renderQuiz(); }); });
-        document.getElementById("submitQuizBtn")?.addEventListener("click", submitQuiz);
-    }
-    
-    function submitQuiz() {
-        quizQuestions.forEach((q, idx) => {
-            const user = (quizAnswers[idx]||"").trim().toLowerCase();
-            const ans = q.answer.trim().toLowerCase();
-            const isOk = user === ans || (ans.includes(user) && user.length>2) || (user.includes(ans));
-            quizResults[idx] = isOk;
-            // Cập nhật box dựa trên kết quả
-            if(currentSheet && q.originalItem && q.originalItem.viet) {
-                const realItem = currentVocab.find(v => v.viet === q.originalItem.viet);
-                if(realItem) {
-                    if(isOk && realItem.box < 3) realItem.box++;
-                    else if(!isOk && realItem.box > 1) realItem.box = 1;
-                    if(realItem) setBox(currentSheet, realItem.viet, realItem.box);
+        while (i < csvText.length) {
+            const ch = csvText[i];
+            const nextCh = csvText[i + 1];
+            
+            if (inQuotes) {
+                if (ch === '"') {
+                    if (nextCh === '"') {
+                        currentField += '"';
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    currentField += ch;
+                }
+            } else {
+                if (ch === '"') {
+                    inQuotes = true;
+                } else if (ch === ',') {
+                    currentRow.push(currentField);
+                    currentField = "";
+                } else if (ch === '\n' || (ch === '\r' && nextCh === '\n')) {
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentField = "";
+                    if (ch === '\r') i++;
+                } else if (ch === '\r') {
+                    // Bỏ qua \r
+                } else {
+                    currentField += ch;
                 }
             }
-        });
-        applyFilter();
-        renderQuiz();
-    }
-
-    function exportData() { const data = JSON.stringify(vocabBoxes); const blob = new Blob([data], {type:"application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "vocab_progress.json"; a.click(); URL.revokeObjectURL(a.href); }
-    function importData(file) { const reader = new FileReader(); reader.onload = e => { try { const imported = JSON.parse(e.target.result); Object.assign(vocabBoxes, imported); saveBoxes(); loadLesson(currentSheet); alert("Import thành công!"); } catch(err) { alert("File không hợp lệ"); } }; reader.readAsText(file); }
-
-    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
-
-    document.querySelectorAll(".tab-btn").forEach(btn => { btn.addEventListener("click", () => { document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); document.getElementById("flashcardTab").classList.toggle("hidden", btn.dataset.tab!=="flashcard"); document.getElementById("quizTab").classList.toggle("hidden", btn.dataset.tab!=="quiz"); }); });
-    document.querySelectorAll(".stat-box").forEach(box => { box.addEventListener("click", () => { currentFilterBox = box.dataset.filter || "all"; applyFilter(); }); });
-    document.getElementById("lessonSelect").addEventListener("change", (e) => { if(e.target.value) loadLesson(e.target.value); });
-    document.getElementById("searchInput").addEventListener("input", () => applyFilter());
-    document.getElementById("refreshBtn").addEventListener("click", () => fetchAllSheets());
-    document.getElementById("prevBtn").addEventListener("click", () => { if(filteredVocab.length){ currentCardIndex = (currentCardIndex-1+filteredVocab.length)%filteredVocab.length; updateFlashcard(); } });
-    document.getElementById("nextBtn").addEventListener("click", () => { if(filteredVocab.length){ currentCardIndex = (currentCardIndex+1)%filteredVocab.length; updateFlashcard(); } });
-    document.getElementById("flipCard").addEventListener("click", () => { if(filteredVocab.length) document.getElementById("flipCard").classList.toggle("flipped"); });
-    document.querySelectorAll(".rating-btn").forEach(btn => { btn.addEventListener("click", () => rateCurrent(btn.dataset.rating)); });
-    document.getElementById("startQuizBtn").addEventListener("click", startQuiz);
-    document.getElementById("exportDataBtn").addEventListener("click", exportData);
-    document.getElementById("importDataBtn").addEventListener("click", () => document.getElementById("importFile").click());
-    document.getElementById("importFile").addEventListener("change", (e) => { if(e.target.files[0]) importData(e.target.files[0]); });
-
-    loadBoxes();
-    fetchAllSheets();
-</script>
-</body>
-</html>
+            i++;
+        }
+        if (currentField !== "" || currentRow.length > 0) {
+            currentRow.push(currentField);
+            rows.push(currentRow);
+        }
+        
+        // Lọc bỏ dòng trống và chuyển thành object
+        const result = [];
+        for (let row of rows) {
+            if (row.length >= 2 && row[0].trim() !== "" && row[1].trim() !== "") {
+                let chinese = row[0].trim();
+                let viet = row[1].trim();
+                // Thay thế \n bằng <br> để hiển thị xuống
